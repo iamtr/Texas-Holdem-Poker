@@ -53,11 +53,11 @@
     <UnityVersion>2020.3.25f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\PlayerScript.cs" />
-    <Compile Include="Assets\Scripts\DeckScript.cs" />
-    <Compile Include="Assets\Scripts\CardScript.cs" />
-    <Compile Include="Assets\Scripts\GameManager.cs" />
-    <Compile Include="Assets\HandEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Scripts\HandEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Scripts\PlayerScript.cs" />
+    <Compile Include="Assets\Scripts\Scripts\DeckScript.cs" />
+    <Compile Include="Assets\Scripts\Scripts\CardScript.cs" />
+    <Compile Include="Assets\Scripts\Scripts\GameManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
