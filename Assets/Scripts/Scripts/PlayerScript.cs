@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using HoldemHand;
 
 public class PlayerScript : MonoBehaviour
@@ -12,8 +13,14 @@ public class PlayerScript : MonoBehaviour
 	private Hand myHand;
 	public GameManager gameManager;
 	[SerializeField] public uint myHandValue;
+	public bool isActivePlayer;
+	public int cash = 1000;
+	[SerializeField] private Text playerText;
 
-
+	private void Start()
+	{
+		playerText.text = this.gameObject.name + ": " + cash;
+	}
 	public void StartHand()
 	{
 		GetCard();
@@ -35,7 +42,14 @@ public class PlayerScript : MonoBehaviour
 		hand[0].ResetCards();
 		hand[1].ResetCards();
 	}
-
+	private void PlayerActed()
+	{
+		gameManager.MoveToNextPlayer();
+	}
+	public void UpdateUI()
+	{
+		playerText.text = this.gameObject.name + ": " + cash;
+	}
 
 
 
