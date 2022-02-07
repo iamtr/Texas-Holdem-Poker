@@ -8,48 +8,59 @@ using HoldemHand;
 
 public class GameManager : MonoBehaviour
 {
-	public enum CurrentGameState
+	public enum GameState
 	{
-		preflop,
-		flop,
-		turn, 
-		river
+		Preflop,
+		Flop,
+		Turn, 
+		River
 	}
 
 	public DeckScript deckScript;
 	private CardScript[] allCards = new CardScript[7];
 	private CardScript[] boardCards = new CardScript[5];
 	public string boardString = "";
+	public Dictionary<PlayerScript, uint> keyValuePairs = new Dictionary<PlayerScript, uint>();
+	[SerializeField] private bool playerActed;
+	[SerializeField] private GameState gameState;
+
 	[SerializeField] private List<Hand> handList = new List<Hand>();
 	[SerializeField] private List<PlayerScript> playerScripts = new List<PlayerScript>();
 	[SerializeField] private List<GameObject> winner = new List<GameObject>();
-	public Dictionary<PlayerScript, uint> keyValuePairs = new Dictionary<PlayerScript, uint>();
+
+	[SerializeField] private GameObject raiseUI;
+	[SerializeField] private GameObject betUI;
+	[SerializeField] private GameObject hideTurn;
+	[SerializeField] private GameObject hideRiver;
+
 	[SerializeField] private int minBetValue;
-	[SerializeField] private int currentPlayerIndex = 0;
+	[SerializeField] private int currentPlayerIndex;
 	[SerializeField] private int callAmount;
 	[SerializeField] private int potValue = 0;
-	[SerializeField] private bool playerActed;
+	
 
 	[SerializeField] private Text winText;
-	[SerializeField] private Text minBetText;
+	[SerializeField] private Text gameStateText;
 	[SerializeField] private Text potText;
+	[SerializeField] private Text raiseErrorText;
+	[SerializeField] private Text betErrorText;
+	[SerializeField] private Text callText;
 
 	[SerializeField] private Button callButton;
 	[SerializeField] private Button raiseButton;
 	[SerializeField] private Button foldButton;
+	[SerializeField] private Button betButton;
 	[SerializeField] private Button checkButton;
 	[SerializeField] private Button allInButton;
-	private void Start()
-	{
-		minBetText.text = String.Format($"Min Bet: {minBetValue}");
-	}
+	[SerializeField] private Button startButton;
+
+	[SerializeField] private InputField raiseInputField;
+	[SerializeField] private InputField betInputField;
 	public void DealClicked()
 	{
-		Debug.Log("deal clicked");
 		ResetGame();
 		winText.gameObject.SetActive(false);
-		for (int i = 0; i < playerScripts.Count ; i++)
-			playerScripts[i].StartHand();// player gets cards
+		StartAllHands(); // player gets cards
 		deckScript.DealCommunityCards();
 		for (int i = 0; i < deckScript.communityCards.Length; i++)
 		{
@@ -65,34 +76,103 @@ public class GameManager : MonoBehaviour
 			keyValuePairs.Add(playerScripts[i], handList[i].HandValue);
 		}
 	}
-	public void CheckClicked()
+	private void StartAllHands()
+	{
+		for (int i = 0; i < playerScripts.Count; i++)
+			playerScripts[i].StartHand();
+	}
+	public void OldCheckClicked()
 	{ 
 		//StoreHandValues();
 		CompareHandValues();
 		GetWinner();
 	}
-	public void RaiseClicked()
+	public void BetClicked()
 	{
-
-	}	
-	public void FoldClicked()
-	{
-
+		betUI.SetActive(true);
 	}
-	public void AllInClicked()
+	public void BetEnterClicked()
 	{
-
+		if (int.Parse(betInputField.text) <= playerScripts[currentPlayerIndex].cash)
+		{
+			callAmount = int.Parse(betInputField.text);
+			playerScripts[currentPlayerIndex].cash -= callAmount;
+			potValue += callAmount;
+			betUI.SetActive(false);
+			playerScripts[currentPlayerIndex].UpdateUI();
+			MoveToNextPlayer();
+		}
+		else if (int.Parse(raiseInputField.text) > playerScripts[currentPlayerIndex].cash)
+			betErrorText.text = "Bet cannot be larger than own cash amount!";
 	}
 	public void CallClicked()
 	{
+		checkButton.gameObject.SetActive(false);
 		playerScripts[currentPlayerIndex].cash -= callAmount;
 		potValue += callAmount;
-		UpdateUI();
 		playerScripts[currentPlayerIndex].UpdateUI();
+		MoveToNextPlayer();
 	}
-	private void UpdateUI()
+	public void RaiseClicked()
+	{
+		raiseUI.SetActive(true);
+	}	
+	public void RaiseEnterClicked()
+	{
+		if (int.Parse(raiseInputField.text) >= callAmount * 2 && int.Parse(raiseInputField.text) <= playerScripts[currentPlayerIndex].cash)
+		{
+			callAmount = int.Parse(raiseInputField.text);
+			playerScripts[currentPlayerIndex].cash -= callAmount;
+			potValue += callAmount;
+			raiseUI.SetActive(false);
+			playerScripts[currentPlayerIndex].UpdateUI();
+			MoveToNextPlayer();
+		}
+			
+		else if (int.Parse(raiseInputField.text) <= callAmount * 2) raiseErrorText.text = "Raise amount must be at least 2x of call amount!";
+		else if (int.Parse(raiseInputField.text) >= playerScripts[currentPlayerIndex].cash) raiseErrorText.text = "Not enough cash!";
+			
+	}
+	public void FoldClicked()
+	{
+		playerScripts[currentPlayerIndex].isActivePlayer = false;
+		Debug.Log(String.Format($"{playerScripts[currentPlayerIndex].gameObject.name} folds"));
+		RemovePlayerFromList();
+		if (playerScripts.Count == 1)
+		{
+			winner.Add(this.gameObject);
+			GetWinner();
+		}
+		else MoveToNextPlayer();
+			
+	}
+	public void CheckClicked()
+	{
+		if (callAmount != 0) Debug.Log("Check clicked when callamount not equal 0!");
+		else MoveToNextPlayer();
+	}
+	public void AllInClicked()
+	{
+		if (callAmount <= playerScripts[currentPlayerIndex].cash)
+			callAmount = playerScripts[currentPlayerIndex].cash;
+		playerScripts[currentPlayerIndex].cash = 0; 
+
+	}
+	public void UpdateUI()
 	{
 		potText.text = $"Pot: {potValue}";
+		callText.text = $"Call: {callAmount}";
+		gameStateText.text = gameState.ToString();
+		if (callAmount == 0)
+		{
+			betButton.gameObject.SetActive(true);
+			callButton.gameObject.SetActive(false);
+		}
+		else
+		{
+			betButton.gameObject.SetActive(false);
+			callButton.gameObject.SetActive(true);
+		}
 	}
 	private void CompareHandValues()
 	{
@@ -110,6 +190,15 @@ public class GameManager : MonoBehaviour
 			Debug.Log("key: " + item.Key + "value: " + item.Value);
 		}
 	}
+	public void StartClicked()
+	{
+		callButton.gameObject.SetActive(true);
+		raiseButton.gameObject.SetActive(true);
+		foldButton.gameObject.SetActive(true);
+		startButton.gameObject.SetActive(false);
+		StartAllHands();
+		CommencePreflop();
+	}
 	private void ResetGame()
 	{
 		deckScript.Shuffle();
@@ -122,6 +211,91 @@ public class GameManager : MonoBehaviour
 		winner.Clear();
 		keyValuePairs.Clear();
 		boardString = "";
+	}
+	private void StartTurn()
+	{
+		currentPlayerIndex = 0;
+		playerScripts[currentPlayerIndex].isActivePlayer = true;
+	}
+	public void MoveToNextPlayer()
+	{
+		currentPlayerIndex--;
+		if (currentPlayerIndex == -1)
+		{
+			GoToNextSession();
+		}
+		Debug.Log("currentplayerindex: " + currentPlayerIndex);
+	}
+	private void GoToNextSession()
+	{
+		switch (gameState)
+		{
+			case (GameState.Preflop):
+				CommenceFlop();
+				break;
+			case (GameState.Flop):
+				CommenceTurn();
+				break;
+			case (GameState.Turn):
+				CommenceRiver();
+				break;
+			case (GameState.River):
+				CompareHandValues();
+				GetWinner();
+				break;
+		}
+	}
+	private void CommencePreflop()
+	{
+		gameState = GameState.Preflop;
+		gameStateText.text = "Preflop";
+		currentPlayerIndex = playerScripts.Count - 1;
+	}
+	private void CommenceFlop()
+	{
+		callAmount = 0;
+		UpdateUI();
+		gameState = GameState.Flop;
+		currentPlayerIndex = playerScripts.Count - 1;
+		checkButton.gameObject.SetActive(true);
+		allInButton.gameObject.SetActive(true);
+		deckScript.DealCommunityCards();
+		for (int i = 0; i < deckScript.communityCards.Length; i++)
+		{
+			boardCards[i] = deckScript.communityCards[i];
+			boardString += boardCards[i].Formatting();
+			if (!(i == allCards.Length)) boardString += " ";
+		}
+		for (int i = 0; i < playerScripts.Count; i++)
+		{
+			handList.Add(new Hand(playerScripts[i].GenerateFormatting(), boardString));
+			playerScripts[i].myHandValue = handList[i].HandValue;
+			//Debug.Log("handvalue: " + handList[i].HandValue);
+			keyValuePairs.Add(playerScripts[i], handList[i].HandValue);
+		}
+		hideTurn.gameObject.SetActive(true);
+		hideRiver.gameObject.SetActive(true);
+
+	}
+	private void CommenceTurn()
+	{
+		callAmount = 0;
+		gameState = GameState.Turn;
+		gameStateText.text = "Turn";
+		currentPlayerIndex = playerScripts.Count - 1;
+		checkButton.gameObject.SetActive(true);
+		allInButton.gameObject.SetActive(true);
+		hideTurn.gameObject.SetActive(false);
+	}
+	private void CommenceRiver()
+	{
+		callAmount = 0;
+		gameState = GameState.River;
+		gameStateText.text = "River";
+		currentPlayerIndex = playerScripts.Count - 1;
+		checkButton.gameObject.SetActive(true);
+		allInButton.gameObject.SetActive(true);
+		hideRiver.gameObject.SetActive(false);
 	}
 	private void GetWinner()
 	{
@@ -139,20 +313,10 @@ public class GameManager : MonoBehaviour
 				winText.text += " ";
 			}
 		}
-
 	}
-	private void StartTurn()
+	private void RemovePlayerFromList()
 	{
-		currentPlayerIndex = 0;
-		playerScripts[currentPlayerIndex].isActivePlayer = true;
-	}
-
-	public void MoveToNextPlayer()
-	{
-		playerScripts[currentPlayerIndex].isActivePlayer = false;
-		currentPlayerIndex++;
-		if (currentPlayerIndex / playerScripts.Count == 1) currentPlayerIndex = 0;
-		playerScripts[currentPlayerIndex].isActivePlayer = true;
+		playerScripts.Remove(playerScripts[currentPlayerIndex]);
 	}
 }
 

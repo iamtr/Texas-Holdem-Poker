@@ -13,7 +13,8 @@ public class PlayerScript : MonoBehaviour
 	private Hand myHand;
 	public GameManager gameManager;
 	[SerializeField] public uint myHandValue;
-	public bool isActivePlayer;
+	public bool isActivePlayer = true;
+	public bool stillInGame = true;
 	public int cash = 1000;
 	[SerializeField] private Text playerText;
 
