@@ -17,6 +17,8 @@ public class PlayerScript : MonoBehaviour
 	public bool stillInGame = true;
 	public int cash = 1000;
 	[SerializeField] private Text playerText;
+	[SerializeField] private GameObject hideCard1;
+	[SerializeField] private GameObject hideCard2;
 
 	private void Start()
 	{
@@ -43,13 +45,19 @@ public class PlayerScript : MonoBehaviour
 		hand[0].ResetCards();
 		hand[1].ResetCards();
 	}
-	private void PlayerActed()
-	{
-		gameManager.MoveToNextPlayer();
-	}
 	public void UpdateUI()
 	{
 		playerText.text = this.gameObject.name + ": " + cash;
+	}
+	public void ShowCards()
+	{
+		hideCard1.gameObject.SetActive(false);
+		hideCard2.gameObject.SetActive(false);
+	}
+	public void HideCards()
+	{
+		hideCard1.gameObject.SetActive(true);
+		hideCard2.gameObject.SetActive(true);
 	}
 
 

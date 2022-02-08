@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
 
 	[SerializeField] private List<Hand> handList = new List<Hand>();
 	[SerializeField] private List<PlayerScript> playerScripts = new List<PlayerScript>();
+	[SerializeField] private List<PlayerScript> participants = new List<PlayerScript>();
 	[SerializeField] private List<GameObject> winner = new List<GameObject>();
 
 	[SerializeField] private GameObject raiseUI;
@@ -155,14 +156,18 @@ public class GameManager : MonoBehaviour
 	{
 		if (callAmount <= playerScripts[currentPlayerIndex].cash)
 			callAmount = playerScripts[currentPlayerIndex].cash;
-		playerScripts[currentPlayerIndex].cash = 0; 
-
+		potValue += callAmount;
+		playerScripts[currentPlayerIndex].cash = 0;
+		playerScripts[currentPlayerIndex].UpdateUI();
+		MoveToNextPlayer();
 	}
 	public void UpdateUI()
 	{
 		potText.text = $"Pot: {potValue}";
 		callText.text = $"Call: {callAmount}";
 		gameStateText.text = gameState.ToString();
+		raiseUI.SetActive(false);
+		betUI.SetActive(false);
 		if (callAmount == 0)
 		{
 			betButton.gameObject.SetActive(true);
@@ -173,6 +178,7 @@ public class GameManager : MonoBehaviour
 			betButton.gameObject.SetActive(false);
 			callButton.gameObject.SetActive(true);
 		}
+		playerScripts[currentPlayerIndex].UpdateUI();
 	}
 	private void CompareHandValues()
 	{
@@ -219,12 +225,14 @@ public class GameManager : MonoBehaviour
 	}
 	public void MoveToNextPlayer()
 	{
+		playerScripts[currentPlayerIndex].HideCards();
 		currentPlayerIndex--;
-		if (currentPlayerIndex == -1)
-		{
+		if (currentPlayerIndex >= 0) playerScripts[currentPlayerIndex].ShowCards();
+		else if (currentPlayerIndex == -1)
 			GoToNextSession();
-		}
-		Debug.Log("currentplayerindex: " + currentPlayerIndex);
+		
+
+		//Debug.Log("currentplayerindex: " + currentPlayerIndex);
 	}
 	private void GoToNextSession()
 	{
@@ -250,13 +258,15 @@ public class GameManager : MonoBehaviour
 		gameState = GameState.Preflop;
 		gameStateText.text = "Preflop";
 		currentPlayerIndex = playerScripts.Count - 1;
+		playerScripts[currentPlayerIndex].ShowCards();
 	}
 	private void CommenceFlop()
 	{
+		currentPlayerIndex = playerScripts.Count - 1;
+		playerScripts[currentPlayerIndex].ShowCards();
 		callAmount = 0;
 		UpdateUI();
 		gameState = GameState.Flop;
-		currentPlayerIndex = playerScripts.Count - 1;
 		checkButton.gameObject.SetActive(true);
 		allInButton.gameObject.SetActive(true);
 		deckScript.DealCommunityCards();
@@ -279,6 +289,8 @@ public class GameManager : MonoBehaviour
 	}
 	private void CommenceTurn()
 	{
+		currentPlayerIndex = playerScripts.Count - 1;
+		playerScripts[currentPlayerIndex].ShowCards();
 		callAmount = 0;
 		gameState = GameState.Turn;
 		gameStateText.text = "Turn";
@@ -289,6 +301,8 @@ public class GameManager : MonoBehaviour
 	}
 	private void CommenceRiver()
 	{
+		currentPlayerIndex = playerScripts.Count - 1;
+		playerScripts[currentPlayerIndex].ShowCards();
 		callAmount = 0;
 		gameState = GameState.River;
 		gameStateText.text = "River";
@@ -299,6 +313,7 @@ public class GameManager : MonoBehaviour
 	}
 	private void GetWinner()
 	{
+		RevealAllCards();
 		for (int i = 0; i < winner.Count; i++)
 			Debug.Log("win: " + winner[i].name);
 		winText.gameObject.SetActive(true);
@@ -314,6 +329,13 @@ public class GameManager : MonoBehaviour
 			}
 		}
 	}
+
+	private void RevealAllCards()
+	{
+		for (int i = participants.Count - 1; i > 0; i--)
+			participants[i].ShowCards();
+	}
+
 	private void RemovePlayerFromList()
 	{
 		playerScripts.Remove(playerScripts[currentPlayerIndex]);
