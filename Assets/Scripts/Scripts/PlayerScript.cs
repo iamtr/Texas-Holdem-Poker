@@ -9,20 +9,27 @@ public class PlayerScript : MonoBehaviour
 	public DeckScript deckScript;
 	public CardScript[] hand;
 	public int handCardIndex = 0;
+	public int playerCalled = 0;
 	public Sprite cardback;
-	private Hand myHand;
-	public GameManager gameManager;
+	[SerializeField] private Hand myHand;
+	[SerializeField] private GameManager gameManager;
 	[SerializeField] public uint myHandValue;
 	public bool isActivePlayer = true;
 	public bool stillInGame = true;
 	public int cash = 1000;
+	[SerializeField] private int playerCalledAmount = 0;
 	[SerializeField] private Text playerText;
+
+	[SerializeField] private GameObject card1;
+	[SerializeField] private GameObject card2;
 	[SerializeField] private GameObject hideCard1;
 	[SerializeField] private GameObject hideCard2;
+	
 
 	private void Start()
 	{
 		playerText.text = this.gameObject.name + ": " + cash;
+		playerCalledAmount = 0;
 	}
 	public void StartHand()
 	{
@@ -41,6 +48,7 @@ public class PlayerScript : MonoBehaviour
 	}
 	public void ResetHand()
 	{
+		playerCalledAmount = 0;
 		handCardIndex = 0;
 		hand[0].ResetCards();
 		hand[1].ResetCards();
@@ -59,7 +67,19 @@ public class PlayerScript : MonoBehaviour
 		hideCard1.gameObject.SetActive(true);
 		hideCard2.gameObject.SetActive(true);
 	}
-
-
-
+	public int GetPlayerCalledAmount()
+	{
+		return playerCalledAmount;
+	}
+	public void SetPlayerCalledAmount(int value)
+	{
+		playerCalledAmount = value;
+	}
+	public void RemoveCards()
+	{
+		card1.SetActive(false);
+		card2.SetActive(false);
+		hideCard1.SetActive(false);
+		hideCard2.SetActive(false);
+	}
 }
